@@ -14,7 +14,7 @@ import Combine
 class Database: ObservableObject {
   static let shared = Database()
 
-  private let db: Connection
+  private var db: Connection
   private let clips = Table("EchoClips")
 
   // MARK: — Column expressions
@@ -22,9 +22,10 @@ class Database: ObservableObject {
   private let filename   = Expression<String>("Filename")
   private let timestamp  = Expression<Date>("Timestamp")
   private let contextTag = Expression<String>("ContextTag")
-  private let colPerson  = Expression<String>("Person")  // new column
-  private let colNote    = Expression<String>("Note")    // new column
+  private let colPerson  = Expression<String>("Person")
+  private let colNote    = Expression<String>("Note")
 
+  /// The main initializer used at runtime
   private init() {
     // 1) Open or create the SQLite file in Documents/
     let url = try! FileManager.default
@@ -65,9 +66,28 @@ class Database: ObservableObject {
     }
   }
 
+  #if DEBUG
+  /// Special initializer for unit tests, pointing at a custom filepath
+  /// so tests don’t touch the real user database.
+  convenience init(testingPath path: String) throws {
+    self.init()     // run all the normal migrations against the *default* DB
+    // then re-open `db` to point at your test path:
+    db = try Connection(path)
+    // ensure schema exists in the test DB as well:
+    try db.run(clips.create(ifNotExists: true) { t in
+      t.column(id, primaryKey: .autoincrement)
+      t.column(filename)
+      t.column(timestamp, defaultValue: Date())
+      t.column(contextTag)
+      t.column(colPerson)
+      t.column(colNote)
+    })
+  }
+  #endif
+
   // MARK: — Insert
 
-  /// Inserts a new clip record (and leaves the audio file on disk in Documents/).
+  /// Inserts a new clip record.
   func insertClip(
     url: URL,
     tag: String,

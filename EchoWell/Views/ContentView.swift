@@ -99,6 +99,7 @@ struct ContentView: View {
           .padding()
           //  .background(RoundedRectangle(cornerRadius: 8).stroke())
         }
+        .accessibilityIdentifier(isRecording ? "Stop" : "Recording")
 
         Spacer()
       }
