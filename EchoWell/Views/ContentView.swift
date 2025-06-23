@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts // for SwiftUI Charts in AnalyticsView
 
 struct ContentView: View {
   // MARK: Services
@@ -25,21 +26,26 @@ struct ContentView: View {
     _tag            = State(initialValue: cfg.tagOptions.first ?? "")
   }
 
-  var body: some View {
-    TabView {
-      recordView
-        .tabItem { Label("Record", systemImage: "mic.circle") }
+    var body: some View {
+      TabView {
+        recordView
+          .tabItem { Label("Record", systemImage: "mic.circle") }
 
-      libraryView
-        .tabItem { Label("Library", systemImage: "waveform.path.ecg") }
+        libraryView
+          .tabItem { Label("Library", systemImage: "waveform.path.ecg") }
 
-      NavigationView { SettingsView() }
+        AnalyticsView()
+        .tabItem { Label("Analytics", systemImage: "chart.bar") }
+          
+        NavigationView {
+          SettingsView()
+        }
         .tabItem { Label("Settings", systemImage: "gearshape") }
+      }
+      .onAppear {
+        loadClips()
+      }
     }
-    .onAppear {
-      loadClips()
-    }
-  }
 
   // MARK: — Record Tab
   private var recordView: some View {
@@ -91,7 +97,7 @@ struct ContentView: View {
           }
           .frame(maxWidth: .infinity)
           .padding()
-          .background(RoundedRectangle(cornerRadius: 8).stroke())
+          //  .background(RoundedRectangle(cornerRadius: 8).stroke())
         }
 
         Spacer()

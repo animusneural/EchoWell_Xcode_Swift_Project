@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4BB009872E0977B700854762 /* PostgresClientKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB009862E0977B700854762 /* PostgresClientKit */; };
+		4BB009912E09866600854762 /* BitCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB009902E09866600854762 /* BitCollections */; };
+		4BB009932E09866600854762 /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB009922E09866600854762 /* Collections */; };
+		4BB009952E09866700854762 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB009942E09866700854762 /* DequeModule */; };
+		4BB009972E09866700854762 /* HashTreeCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB009962E09866700854762 /* HashTreeCollections */; };
+		4BB009992E09866700854762 /* HeapModule in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB009982E09866700854762 /* HeapModule */; };
+		4BB0099B2E09866700854762 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB0099A2E09866700854762 /* OrderedCollections */; };
+		4BB0099D2E09866700854762 /* _RopeModule in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB0099C2E09866700854762 /* _RopeModule */; };
 		4BB6C6BE2E0828DB002B22FD /* SQLite in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB6C6BD2E0828DB002B22FD /* SQLite */; };
 /* End PBXBuildFile section */
 
@@ -40,7 +48,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4BB0099D2E09866700854762 /* _RopeModule in Frameworks */,
+				4BB009972E09866700854762 /* HashTreeCollections in Frameworks */,
 				4BB6C6BE2E0828DB002B22FD /* SQLite in Frameworks */,
+				4BB009872E0977B700854762 /* PostgresClientKit in Frameworks */,
+				4BB009992E09866700854762 /* HeapModule in Frameworks */,
+				4BB009952E09866700854762 /* DequeModule in Frameworks */,
+				4BB009932E09866600854762 /* Collections in Frameworks */,
+				4BB0099B2E09866700854762 /* OrderedCollections in Frameworks */,
+				4BB009912E09866600854762 /* BitCollections in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +100,14 @@
 			name = EchoWell;
 			packageProductDependencies = (
 				4BB6C6BD2E0828DB002B22FD /* SQLite */,
+				4BB009862E0977B700854762 /* PostgresClientKit */,
+				4BB009902E09866600854762 /* BitCollections */,
+				4BB009922E09866600854762 /* Collections */,
+				4BB009942E09866700854762 /* DequeModule */,
+				4BB009962E09866700854762 /* HashTreeCollections */,
+				4BB009982E09866700854762 /* HeapModule */,
+				4BB0099A2E09866700854762 /* OrderedCollections */,
+				4BB0099C2E09866700854762 /* _RopeModule */,
 			);
 			productName = EchoWell;
 			productReference = 4BB6C6A12E07EBA1002B22FD /* EchoWell.app */;
@@ -115,6 +139,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				4BB6C6BC2E0828DB002B22FD /* XCRemoteSwiftPackageReference "SQLite.swift" */,
+				4BB009852E0977B700854762 /* XCRemoteSwiftPackageReference "PostgresClientKit" */,
+				4BB0098F2E09866600854762 /* XCRemoteSwiftPackageReference "swift-collections" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4BB6C6A22E07EBA1002B22FD /* Products */;
@@ -360,6 +386,22 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		4BB009852E0977B700854762 /* XCRemoteSwiftPackageReference "PostgresClientKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/codewinsdotcom/PostgresClientKit.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+		4BB0098F2E09866600854762 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.0;
+			};
+		};
 		4BB6C6BC2E0828DB002B22FD /* XCRemoteSwiftPackageReference "SQLite.swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/stephencelis/SQLite.swift.git";
@@ -371,6 +413,46 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		4BB009862E0977B700854762 /* PostgresClientKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4BB009852E0977B700854762 /* XCRemoteSwiftPackageReference "PostgresClientKit" */;
+			productName = PostgresClientKit;
+		};
+		4BB009902E09866600854762 /* BitCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4BB0098F2E09866600854762 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = BitCollections;
+		};
+		4BB009922E09866600854762 /* Collections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4BB0098F2E09866600854762 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = Collections;
+		};
+		4BB009942E09866700854762 /* DequeModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4BB0098F2E09866600854762 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = DequeModule;
+		};
+		4BB009962E09866700854762 /* HashTreeCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4BB0098F2E09866600854762 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = HashTreeCollections;
+		};
+		4BB009982E09866700854762 /* HeapModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4BB0098F2E09866600854762 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = HeapModule;
+		};
+		4BB0099A2E09866700854762 /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4BB0098F2E09866600854762 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
+		};
+		4BB0099C2E09866700854762 /* _RopeModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4BB0098F2E09866600854762 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = _RopeModule;
+		};
 		4BB6C6BD2E0828DB002B22FD /* SQLite */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4BB6C6BC2E0828DB002B22FD /* XCRemoteSwiftPackageReference "SQLite.swift" */;
