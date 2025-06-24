@@ -47,7 +47,7 @@ struct ClipsListView: View {
                 } label: {
                     Image(systemName: "magnifyingglass")
                       .imageScale(.large)
-                      .padding(6)
+                      .padding(8)
                       .background(Circle().fill(Color(UIColor.secondarySystemFill)))
                 }
             }
@@ -102,7 +102,7 @@ struct ClipsListView: View {
                         }
                         .buttonStyle(BorderlessButtonStyle())
                     }
-                    .padding(.vertical,6)
+                    .padding(.vertical, 8)
                 }
                 .onDelete(perform: delete)
             }
