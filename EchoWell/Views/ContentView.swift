@@ -35,6 +35,7 @@ struct ContentView: View {
             NavigationView {
                 recordView
                     .navigationTitle("Record")
+                    .navigationBarTitleDisplayMode(.inline)   // ← add this
                     // every second while recording, increment timer
                     .onReceive(timer) { _ in
                         if isRecording { elapsedSeconds += 1 }
@@ -52,6 +53,7 @@ struct ContentView: View {
             NavigationView {
                 // simple subview showing ClipsListView
                 ClipsListView()
+                    .navigationBarTitleDisplayMode(.inline)   // ← add this
                     .environmentObject(audio)
             }
             .tabItem {
@@ -62,6 +64,7 @@ struct ContentView: View {
             NavigationView {
                 AnalyticsView()
                     .navigationTitle("Analytics")
+                    .navigationBarTitleDisplayMode(.inline)   // ← add this
             }
             .tabItem {
                 Label("Analytics", systemImage: "chart.bar")
@@ -71,6 +74,7 @@ struct ContentView: View {
             NavigationView {
                 SettingsView()
                     .navigationTitle("Settings")
+                    .navigationBarTitleDisplayMode(.inline)   // ← add this
             }
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
@@ -98,14 +102,6 @@ struct ContentView: View {
                                      : .primary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.bottom, 10)
-
-                // 3) Status message while recording
-                if isRecording {
-                    Text(elapsedSeconds >= 15 ? "Good to go!" : "Hold to record…")
-                        .font(.headline.monospacedDigit())
-                        .foregroundColor(elapsedSeconds >= 15 ? .green : .red)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
 
                 // 4) Custom Text Field
                 VStack(alignment: .leading, spacing: 4) {
@@ -163,8 +159,15 @@ struct ContentView: View {
                     .padding()
                 }
                 .accessibilityIdentifier(isRecording ? "Stop" : "Recording")
-
-                Spacer()
+                
+                // ex-3) Status message while recording
+                if isRecording {
+                    Text(elapsedSeconds >= 15 ? "Good to go!" : "Hold to record…")
+                        .font(.headline.monospacedDigit())
+                        .foregroundColor(elapsedSeconds >= 15 ? .green : .red)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+             Spacer()
             }
             .padding()
         }

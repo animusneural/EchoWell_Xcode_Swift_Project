@@ -1,4 +1,3 @@
-//
 //  AnalyticsView.swift
 //  EchoWell
 //
@@ -12,7 +11,7 @@ import Charts    // available in iOS 16+/macOS 13+
 struct AnalyticsView: View {
   @State private var clips: [EchoClip] = []
 
-  // Aggregated data models
+  // MARK: — Aggregated data
   private var clipsByDay: [(date: Date, count: Int)] {
     let calendar = Calendar.current
     let grouped = Dictionary(grouping: clips) { clip in
@@ -31,52 +30,58 @@ struct AnalyticsView: View {
   }
 
   var body: some View {
-    NavigationView {
-      ScrollView {
-        VStack(spacing: 32) {
-          // MARK: — Clips per Day
-          VStack(alignment: .leading) {
-            Text("Clips per Day")
-              .font(.headline)
-            Chart(clipsByDay, id: \.date) { entry in
-              BarMark(
-                x: .value("Date", entry.date, unit: .day),
-                y: .value("Clips", entry.count)
-              )
-            }
-            .chartXAxis {
-              AxisMarks(values: .stride(by: .day, count: 1)) { tick in
-                AxisGridLine()
-                AxisValueLabel(format: .dateTime.weekday(.abbreviated))
-              }
-            }
-            .frame(height: 200)
+    ScrollView {
+      VStack(spacing: 8) {               // ← tighter spacing
+        // MARK: — Clips per Day
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Clips per Day")
+            .font(.headline)
+          Chart(clipsByDay, id: \.date) { entry in
+            BarMark(
+              x: .value("Date", entry.date, unit: .day),
+              y: .value("Clips", entry.count)
+            )
           }
-
-          // MARK: — Tag Distribution
-          VStack(alignment: .leading) {
-            Text("Tag Distribution")
-              .font(.headline)
-            Chart(tagFrequencies, id: \.tag) { entry in
-              SectorMark(
-                angle: .value("Count", entry.count),
-                innerRadius: .ratio(0.5),
-                outerRadius: .ratio(1.0)
-              )
-              .foregroundStyle(by: .value("Tag", entry.tag))
+          .chartXAxis {
+            AxisMarks(values: .stride(by: .day, count: 1)) { tick in
+              AxisGridLine()
+              AxisValueLabel(format: .dateTime.weekday(.abbreviated))
             }
-            .frame(height: 200)
-            .chartLegend(position: .bottom)
           }
+          .frame(height: 180)           // ← you can tweak this height
         }
-        .padding()
+
+        // MARK: — Tag Distribution
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Tag Distribution")
+            .font(.headline)
+          Chart(tagFrequencies, id: \.tag) { entry in
+            SectorMark(
+              angle: .value("Count", entry.count),
+              innerRadius: .ratio(0.5),
+              outerRadius: .ratio(1.0)
+            )
+            .foregroundStyle(by: .value("Tag", entry.tag))
+          }
+          .frame(height: 180)           // ← and this
+          .chartLegend(position: .bottom)
+        }
       }
-      .navigationTitle("Analytics")
-      .navigationBarTitleDisplayMode(.inline)
-      .onAppear {
-        clips = Database.shared.fetchAll()
-      }
+      .padding(.horizontal)
+      .padding(.top, 0)                 // ← remove any extra top padding
     }
-    .navigationViewStyle(StackNavigationViewStyle())
+    .onAppear {
+      clips = Database.shared.fetchAll()
+    }
+  }
+}
+
+struct AnalyticsView_Previews: PreviewProvider {
+  static var previews: some View {
+    NavigationView {
+      AnalyticsView()
+        .navigationTitle("Analytics")
+        .navigationBarTitleDisplayMode(.inline)
+    }
   }
 }
