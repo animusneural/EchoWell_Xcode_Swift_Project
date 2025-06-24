@@ -4,20 +4,19 @@ import AVFoundation
 #endif
 import Combine
 
+/// Manages audio recording & playback.
 class AudioManager: ObservableObject {
   #if os(iOS)
   private var recorder: AVAudioRecorder?
   private var player: AVAudioPlayer? {
-    didSet {
-      player?.delegate = delegateHolder
-    }
+    didSet { player?.delegate = delegateHolder }
   }
 
   @Published var isPlaying: Bool = false
   private lazy var delegateHolder = AudioPlayerDelegate(self)
   #endif
 
-  // Read dynamic config values
+  // MARK: Config‐backed
   private var config = Config.shared
   var sampleRate: Double { config.sampleRate }
   var duration: TimeInterval { config.recordDuration }
@@ -35,10 +34,10 @@ class AudioManager: ObservableObject {
     #endif
   }
 
+  /// Starts recording until `stopRecording()` is called.
   func startRecording(to url: URL) {
     #if os(iOS)
-    let session = AVAudioSession.sharedInstance()
-    guard session.recordPermission == .granted else {
+    guard AVAudioSession.sharedInstance().recordPermission == .granted else {
       print("🔒 No record permission")
       return
     }
@@ -50,19 +49,21 @@ class AudioManager: ObservableObject {
     ]
     do {
       recorder = try AVAudioRecorder(url: url, settings: settings)
-      recorder?.record(forDuration: duration)
+      recorder?.record()
     } catch {
       print("❌ Recording failed:", error)
     }
     #endif
   }
 
+  /// Stops whichever recording is in progress.
   func stopRecording() {
     #if os(iOS)
     recorder?.stop()
     #endif
   }
 
+  /// Toggles playback of the given file.
   func playClip(at url: URL) {
     #if os(iOS)
     if let p = player, p.url == url, p.isPlaying {
@@ -78,6 +79,14 @@ class AudioManager: ObservableObject {
         isPlaying = false
       }
     }
+    #endif
+  }
+
+  /// Pauses playback (if currently playing)
+  func pauseClip() {
+    #if os(iOS)
+    player?.pause()
+    isPlaying = false
     #endif
   }
 }

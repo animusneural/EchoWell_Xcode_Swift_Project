@@ -1,265 +1,221 @@
 import SwiftUI
-import Charts // for SwiftUI Charts in AnalyticsView
+import Charts       // for AnalyticsView
+import Combine
+import AVFoundation // for real-time audio duration if needed
 
 struct ContentView: View {
-  // MARK: Services
-  @StateObject private var db     = Database.shared
-  @StateObject private var audio  = AudioManager()
-  @StateObject private var config = Config.shared
+    // MARK: – Services & Config
+    @StateObject private var db     = Database.shared
+    @StateObject private var audio  = AudioManager()
+    @StateObject private var config = Config.shared
 
-  // MARK: View state
-  @State private var clips               = [EchoClip]()
-  @State private var note                = ""      // Custom Text
-  @State private var selectedPerson      = ""      // Person
-  @State private var tag                 = ""      // Activity Tag
-  @State private var isRecording         = false
-  @State private var recordURL: URL?
-  @State private var libraryViewType: LibraryViewType = .list
+    // MARK: – View State
+    @State private var clips               = [EchoClip]()    // all clips for library
+    @State private var note                = ""              // record note text
+    @State private var selectedPerson      = ""              // chosen person tag
+    @State private var tag                 = ""              // chosen activity tag
+    @State private var isRecording         = false           // recording in progress?
+    @State private var recordURL: URL?                        // where to save the .wav
+    @State private var libraryViewType: LibraryViewType = .list
+    @State private var lastPlayedFilename: String?           // track playback
+    @State private var elapsedSeconds: Int = 0               // live record timer
+    private let timer = Timer.publish(every: 1, on: .main, in: .common)
+                            .autoconnect()                  // for ticking each second
 
-  // Track which clip is playing
-  @State private var lastPlayedFilename: String?
-
-  // Initialize default selections
-  init() {
-    let cfg = Config.shared
-    _selectedPerson = State(initialValue: cfg.nameOptions.first ?? "")
-    _tag            = State(initialValue: cfg.tagOptions.first ?? "")
-  }
+    // MARK: – Default Picker Selections
+    init() {
+        let cfg = Config.shared
+        _selectedPerson = State(initialValue: cfg.nameOptions.first ?? "")
+        _tag            = State(initialValue: cfg.tagOptions.first ?? "")
+    }
 
     var body: some View {
-      TabView {
-        recordView
-          .tabItem { Label("Record", systemImage: "mic.circle") }
+        TabView {
+            // — Record Tab —
+            NavigationView {
+                recordView
+                    .navigationTitle("Record")
+                    // every second while recording, increment timer
+                    .onReceive(timer) { _ in
+                        if isRecording { elapsedSeconds += 1 }
+                    }
+                    // when stopping, reset timer
+                    .onChange(of: isRecording) { recording in
+                        if !recording { elapsedSeconds = 0 }
+                    }
+            }
+            .tabItem {
+                Label("Record", systemImage: "mic.circle")
+            }
 
-        libraryView
-          .tabItem { Label("Library", systemImage: "waveform.path.ecg") }
+            // — Library Tab —
+            NavigationView {
+                // simple subview showing ClipsListView
+                ClipsListView()
+                    .environmentObject(audio)
+            }
+            .tabItem {
+                Label("Library", systemImage: "waveform.path.ecg")
+            }
 
-        AnalyticsView()
-        .tabItem { Label("Analytics", systemImage: "chart.bar") }
-          
-        NavigationView {
-          SettingsView()
+            // — Analytics Tab —
+            NavigationView {
+                AnalyticsView()
+                    .navigationTitle("Analytics")
+            }
+            .tabItem {
+                Label("Analytics", systemImage: "chart.bar")
+            }
+
+            // — Settings Tab —
+            NavigationView {
+                SettingsView()
+                    .navigationTitle("Settings")
+            }
+            .tabItem {
+                Label("Settings", systemImage: "gearshape")
+            }
         }
-        .tabItem { Label("Settings", systemImage: "gearshape") }
-      }
-      .onAppear {
-        loadClips()
-      }
+        // on first appearance, load saved clips
+        .onAppear {
+            clips = (try? db.fetchAll()) ?? []
+        }
     }
 
-  // MARK: — Record Tab
-  private var recordView: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 20) {
-        Text("EchoWell")
-          .font(.largeTitle).bold()
+    // MARK: — Record View Sub-Layout
+    private var recordView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                // 1) App title
+                Text("EchoWell")
+                    .font(.largeTitle).bold()
 
-        // 1. Custom Text Field
-        VStack(alignment: .leading, spacing: 4) {
-          Text("Custom Text:")
-            .font(.headline)
-          TextField("Enter note…", text: $note)
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-        }
+                // 2) Big timer display, center-aligned
+                Text(timeString(from: elapsedSeconds))
+                    .font(.system(size: 48, weight: .semibold, design: .monospaced))
+                    .foregroundColor(isRecording
+                                     ? (elapsedSeconds >= 15 ? .green : .red)
+                                     : .primary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.bottom, 10)
 
-        // 2. Person Picker
-        VStack(alignment: .leading, spacing: 4) {
-          Text("Person:")
-            .font(.headline)
-          Picker("Person", selection: $selectedPerson) {
-            ForEach(config.nameOptions, id: \.self) { name in
-              Text(name).tag(name)
-            }
-          }
-          .pickerStyle(MenuPickerStyle())
-        }
+                // 3) Status message while recording
+                if isRecording {
+                    Text(elapsedSeconds >= 15 ? "Good to go!" : "Hold to record…")
+                        .font(.headline.monospacedDigit())
+                        .foregroundColor(elapsedSeconds >= 15 ? .green : .red)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
 
-        // 3. Activity Tag Picker
-        VStack(alignment: .leading, spacing: 4) {
-          Text("Activity Tag:")
-            .font(.headline)
-          Picker("Tag", selection: $tag) {
-            ForEach(config.tagOptions, id: \.self) { t in
-              Text(t.capitalized).tag(t)
-            }
-          }
-          .pickerStyle(MenuPickerStyle())
-        }
-
-        // 4. Record / Stop Button
-        Button(action: toggleRecording) {
-          HStack {
-            Image(systemName: isRecording ? "stop.circle.fill" : "record.circle")
-              .font(.system(size: 50))
-              .foregroundColor(isRecording ? .red : .primary)
-            Text(isRecording ? "Stop" : "Record")
-              .font(.title2).bold()
-          }
-          .frame(maxWidth: .infinity)
-          .padding()
-          //  .background(RoundedRectangle(cornerRadius: 8).stroke())
-        }
-        .accessibilityIdentifier(isRecording ? "Stop" : "Recording")
-
-        Spacer()
-      }
-      .padding()
-    }
-  }
-
-  // MARK: — Library Tab
-  private var libraryView: some View {
-    NavigationView {
-      VStack {
-        Picker("View", selection: $libraryViewType) {
-          ForEach(LibraryViewType.allCases, id: \.self) { type in
-            Text(type.rawValue).tag(type)
-          }
-        }
-        .pickerStyle(SegmentedPickerStyle())
-        .padding(.horizontal)
-
-        if libraryViewType == .list {
-          // List with swipe-to-delete and custom display
-          List {
-            ForEach(clips) { clip in
-              HStack(alignment: .top) {
+                // 4) Custom Text Field
                 VStack(alignment: .leading, spacing: 4) {
-                  Text(clip.note)
-                    .font(.body)
-                  Text("👤 \(clip.person)   •   🏷 \(clip.contextTag)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                  Text(
-                    clip.timestamp
-                        .formatted(
-                            .dateTime
-                                .year().month().day()
-                                .hour().minute()
-                        )
-                  )
-                    .font(.caption2)
-                    .foregroundColor(.gray)
+                    Text("Custom Text:")
+                        .font(.headline)
+                    TextField("Enter note…", text: $note)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
+
+                // 5) Person Picker
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Person:")
+                        .font(.headline)
+                    Picker("Person", selection: $selectedPerson) {
+                        ForEach(config.nameOptions, id: \.self) {
+                            Text($0).tag($0)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                // 6) Activity Tag Picker
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Activity Tag:")
+                        .font(.headline)
+                    Picker("Tag", selection: $tag) {
+                        ForEach(config.tagOptions, id: \.self) {
+                            Text($0.capitalized).tag($0)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                // 7) Record / Stop Button
+                Button(action: toggleRecording) {
+                    HStack {
+                        Image(systemName: isRecording ? "stop.circle.fill" : "record.circle")
+                            .font(.system(size: 50))
+                            .foregroundColor(
+                                isRecording
+                                  ? (elapsedSeconds >= 15 ? .green : .red)
+                                  : .primary
+                            )
+                        Text(isRecording ? "Stop" : "Record")
+                            .font(.title2).bold()
+                            .foregroundColor(
+                                isRecording
+                                  ? (elapsedSeconds >= 15 ? .green : .red)
+                                  : .primary
+                            )
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                }
+                .accessibilityIdentifier(isRecording ? "Stop" : "Recording")
+
                 Spacer()
-                playPauseButton(for: clip)
-              }
-              .padding(.vertical, 6)
-            }
-            .onDelete(perform: delete)
-          }
-        } else {
-          // Grid: show same fields stacked
-          ScrollView {
-            LazyVGrid(
-              columns: [GridItem(.flexible()), GridItem(.flexible())],
-              spacing: 16
-            ) {
-              ForEach(clips) { clip in
-                VStack(spacing: 8) {
-                  Text(clip.note).font(.body)
-                    Text("👤 \(clip.person)\n🏷 \(clip.contextTag)")
-                        .multilineTextAlignment(.center)
-                        .font(.caption)
-                  Text(
-                    clip.timestamp
-                        .formatted(
-                            .dateTime
-                                .year().month().day()
-                                .hour().minute()
-                        )
-                  )
-                    .font(.caption2)
-                    .foregroundColor(.gray)
-                  playPauseButton(for: clip)
-                    .font(.title)
-                    .padding(.top, 4)
-                }
-                .padding()
-                .background(
-                  RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.gray, lineWidth: 1)
-                )
-              }
             }
             .padding()
-          }
         }
-      }
-      .navigationTitle("Clips")
     }
-  }
 
-  // MARK: — Play/Pause Button
-  private func playPauseButton(for clip: EchoClip) -> some View {
-    Button {
-      play(clip: clip)
-    } label: {
-      let isThisPlaying = audio.isPlaying && lastPlayedFilename == clip.filename
-      Image(systemName: isThisPlaying ? "pause.circle.fill" : "play.circle")
+    // MARK: — Actions
+
+    /// Toggles recording on/off and saves clip when stopping
+    private func toggleRecording() {
+        if isRecording {
+            audio.stopRecording()
+            isRecording = false
+            if let url = recordURL {
+                try? db.insertClip(url: url,
+                                   tag: tag,
+                                   person: selectedPerson,
+                                   note: note)
+            }
+        } else {
+            let filename = "\(Int(Date().timeIntervalSince1970)).wav"
+            recordURL = documentsURL().appendingPathComponent(filename)
+            audio.startRecording(to: recordURL!)
+            isRecording = true
+        }
     }
-    .buttonStyle(BorderlessButtonStyle())
-  }
 
-  // MARK: — Actions
-
-  private func toggleRecording() {
-    if isRecording {
-      audio.stopRecording()
-      isRecording = false
-      guard let url = recordURL else { return }
-      db.insertClip(
-        url: url,
-        tag: tag,
-        person: selectedPerson,
-        note: note
-      )
-      loadClips()
-    } else {
-      let filename = "\(Int(Date().timeIntervalSince1970)).wav"
-      recordURL = documentsURL().appendingPathComponent(filename)
-      audio.startRecording(to: recordURL!)
-      isRecording = true
+    /// Helper to locate Documents directory
+    private func documentsURL() -> URL {
+        try! FileManager.default.url(for: .documentDirectory,
+                                     in: .userDomainMask,
+                                     appropriateFor: nil,
+                                     create: true)
     }
-  }
 
-  private func play(clip: EchoClip) {
-    let url = documentsURL().appendingPathComponent(clip.filename)
-    lastPlayedFilename = clip.filename
-    audio.playClip(at: url)
-  }
-
-  private func delete(at offsets: IndexSet) {
-    offsets.forEach { i in
-      let clip = clips[i]
-      db.deleteClip(clip)
+    /// Format seconds as MM:SS
+    private func timeString(from seconds: Int) -> String {
+        let mins = seconds / 60
+        let secs = seconds % 60
+        return String(format: "%02d:%02d", mins, secs)
     }
-    loadClips()
-  }
-
-  private func loadClips() {
-    clips = db.fetchAll()   // <- call the method with ()
-  }
-
-  private func documentsURL() -> URL {
-    try! FileManager.default
-      .url(
-        for: .documentDirectory,
-        in: .userDomainMask,
-        appropriateFor: nil,
-        create: true
-      )
-  }
 }
 
-// MARK: — Preview & Helpers
+// MARK: — Preview & Library Selector
+
 struct ContentView_Previews: PreviewProvider {
-  static var previews: some View {
-    ContentView()
-  }
+    static var previews: some View {
+        ContentView()
+    }
 }
 
 enum LibraryViewType: String, CaseIterable {
-  case list = "List"
-  case grid = "Grid"
+    case list = "List"
+    case grid = "Grid"
 }

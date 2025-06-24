@@ -1,10 +1,10 @@
+// Views/SettingsView.swift
+
 import SwiftUI
 import UIKit    // for UIActivityViewController
 
 // MARK: – UIKit share‐sheet helper
-
 extension UIApplication {
-  /// Finds the topmost UIViewController to present from.
   var topViewController: UIViewController? {
     connectedScenes
       .compactMap { $0 as? UIWindowScene }
@@ -32,18 +32,18 @@ private extension UIViewController {
 
 func presentShareSheet(items: [Any]) {
   DispatchQueue.main.async {
-    let activity = UIActivityViewController(activityItems: items, applicationActivities: nil)
-    UIApplication.shared.topViewController?.present(activity, animated: true)
+    let activity = UIActivityViewController(activityItems: items,
+                                            applicationActivities: nil)
+    UIApplication.shared.topViewController?
+      .present(activity, animated: true)
   }
 }
-
-// MARK: – SettingsView
 
 struct SettingsView: View {
   @StateObject private var config    = Config.shared
   @State private var newTag         = ""
   @State private var newName        = ""
-  
+
   // Data‐preview sheet state
   @State private var showDataSheet  = false
   @State private var dataPreview    = ""
@@ -51,26 +51,19 @@ struct SettingsView: View {
   @State private var previewClips   = [EchoClip]()
 
   enum DataFormat: String, CaseIterable, Identifiable {
-    case table      = "Table"
-    case json     = "JSON"
-    case csv    = "CSV"
+    case table = "Table", json = "JSON", csv = "CSV"
     var id: String { rawValue }
   }
 
   var body: some View {
     Form {
-      // — Data Section —
       Section(header: Text("Data")) {
         Button("View & Export Data") {
-            //force csv as the selected segment
-         // dataFormat = .csv
-         // updatePreview(for: .csv)
           updatePreview(for: dataFormat)
           showDataSheet = true
         }
       }
-      
-      // — Activity Tags —
+
       Section(header: Text("Activity Tags")) {
         ForEach(config.tagOptions, id: \.self) { tag in
           Text(tag.capitalized)
@@ -85,7 +78,6 @@ struct SettingsView: View {
         }
       }
 
-      // — People Names —
       Section(header: Text("People")) {
         ForEach(config.nameOptions, id: \.self) { name in
           Text(name)
@@ -102,8 +94,6 @@ struct SettingsView: View {
     }
     .navigationTitle("Settings")
     .navigationBarTitleDisplayMode(.inline)
-
-    // Data‐preview & export sheet
     .sheet(isPresented: $showDataSheet) {
       NavigationView {
         VStack(spacing: 16) {
@@ -126,7 +116,7 @@ struct SettingsView: View {
               }
             case .json:
               ScrollView {
-                if let jsonData = try? JSONEncoder().encode(Database.shared.fetchAll()),
+                if let jsonData = try? JSONEncoder().encode(previewClips),
                    let s = String(data: jsonData, encoding: .utf8)
                 {
                   Text(s)
@@ -141,26 +131,34 @@ struct SettingsView: View {
             case .table:
               List {
                 HStack {
-                  Text("ID").bold().frame(width:40, alignment:.leading)
                   Text("File").bold().frame(width:100, alignment:.leading)
-                  Text("Date").bold().frame(maxWidth:.infinity, alignment:.leading)
+                  Text("Date").bold().frame(maxWidth:.infinity,
+                                            alignment:.leading)
                   Text("Person").bold().frame(width:80, alignment:.leading)
                   Text("Tag").bold().frame(width:80, alignment:.leading)
-                  Text("Note").bold().frame(maxWidth:.infinity, alignment:.leading)
+                  Text("Note").bold().frame(maxWidth:.infinity,
+                                           alignment:.leading)
                 }
                 .font(.caption)
                 ForEach(previewClips) { clip in
                   HStack(alignment:.top) {
-                    Text("\(clip.id)").frame(width:40, alignment:.leading)
-                    Text(clip.filename).frame(width:100, alignment:.leading)
-                    Text(clip.timestamp.formatted(.dateTime.year().month().day()))
-                      .frame(maxWidth:.infinity, alignment:.leading)
-                    Text(clip.person).frame(width:80, alignment:.leading)
-                    Text(clip.contextTag).frame(width:80, alignment:.leading)
-                    Text(clip.note).frame(maxWidth:.infinity, alignment:.leading)
+                    Text(clip.filename)
+                      .frame(width:100, alignment:.leading)
+                    Text(clip.timestamp
+                           .formatted(.dateTime.year()
+                                       .month().day()))
+                      .frame(maxWidth:.infinity,
+                             alignment:.leading)
+                    Text(clip.person)
+                      .frame(width:80, alignment:.leading)
+                    Text(clip.contextTag)
+                      .frame(width:80, alignment:.leading)
+                    Text(clip.note)
+                      .frame(maxWidth:.infinity,
+                             alignment:.leading)
                   }
                   .font(.system(.caption, design:.monospaced))
-                  .padding(.vertical,2)
+                  .padding(.vertical, 2)
                 }
               }
             }
@@ -177,7 +175,7 @@ struct SettingsView: View {
         }
         .navigationTitle("All Clips")
         .toolbar {
-          ToolbarItem(placement:.cancellationAction) {
+          ToolbarItem(placement: .cancellationAction) {
             Button("Close") { showDataSheet = false }
           }
         }
@@ -186,16 +184,16 @@ struct SettingsView: View {
     }
   }
 
-  // MARK: — Helpers
+  // MARK: – Helpers
 
-  private func updatePreview(for format: DataFormat) {
-    let clips = Database.shared.fetchAll()
+  private func updatePreview(for fmt: DataFormat) {
+    let clips = (try? Database.shared.fetchAll()) ?? []
     previewClips = clips
-    dataPreview = (format == .csv) ? generateCSV(from: clips) : ""
+    dataPreview = (fmt == .csv) ? generateCSV(from: clips) : ""
   }
 
   private func doExport() {
-    let clips = Database.shared.fetchAll()
+    let clips = (try? Database.shared.fetchAll()) ?? []
     let csv   = generateCSV(from: clips)
     let tmp   = FileManager.default.temporaryDirectory
       .appendingPathComponent("EchoWellData.csv")
@@ -209,20 +207,24 @@ struct SettingsView: View {
 
   private func addTag() {
     let t = newTag.trimmingCharacters(in:.whitespaces)
-    guard !t.isEmpty else { return }
-    config.tagOptions.append(t)
-    newTag = ""
+    if !t.isEmpty { config.tagOptions.append(t); newTag = "" }
   }
-  private func deleteTags(at offs:IndexSet) {
-    config.tagOptions.remove(atOffsets:offs)
+  private func deleteTags(at offs: IndexSet) {
+    config.tagOptions.remove(atOffsets: offs)
   }
   private func addName() {
     let n = newName.trimmingCharacters(in:.whitespaces)
-    guard !n.isEmpty else { return }
-    config.nameOptions.append(n)
-    newName = ""
+    if !n.isEmpty { config.nameOptions.append(n); newName = "" }
   }
-  private func deleteNames(at offs:IndexSet) {
-    config.nameOptions.remove(atOffsets:offs)
+  private func deleteNames(at offs: IndexSet) {
+    config.nameOptions.remove(atOffsets: offs)
+  }
+}
+
+struct SettingsView_Previews: PreviewProvider {
+  static var previews: some View {
+    NavigationView {
+      SettingsView()
+    }
   }
 }
