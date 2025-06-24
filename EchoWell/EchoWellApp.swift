@@ -16,7 +16,8 @@ struct EchoWellApp: App {
 
   var body: some Scene {
     WindowGroup {
-      ContentView()  // Asigură-te că aici stă ContentView, nu ClipsListView
+      ContentView()
+            .environmentObject(AudioManager())// Asigură-te că aici stă ContentView, nu ClipsListView
     }
   }
 }

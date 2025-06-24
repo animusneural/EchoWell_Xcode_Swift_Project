@@ -11,18 +11,18 @@ struct ClipsListView: View {
   @State private var clips: [EchoClip] = []
   @State private var lastPlayedFilename: String? = nil
 
-  // ── New filter state ──────────────────────────────────────────────────────
-  @State private var filterTag: String    = "Filter Tags"
-  @State private var filterPerson: String = "Filter People"
+  // ── Filter state ─────────────────────────────────────────────────────────
+  @State private var filterTag: String    = "All"    // ← default now "All"
+  @State private var filterPerson: String = "All"    // ← default now "All"
   @State private var searchText: String   = ""
   @State private var showSearchField = false
 
   // apply Tag, Person & free‐text filters
   private var filteredClips: [EchoClip] {
     clips.filter { clip in
-      (filterTag == "Filter Tags"       || clip.contextTag == filterTag) &&
-      (filterPerson == "Filter People"    || clip.person     == filterPerson) &&
-      (searchText.isEmpty       || clip.note.localizedCaseInsensitiveContains(searchText))
+      (filterTag    == "All" || clip.contextTag == filterTag) &&
+      (filterPerson == "All" || clip.person     == filterPerson) &&
+      (searchText.isEmpty || clip.note.localizedCaseInsensitiveContains(searchText))
     }
   }
 
@@ -32,7 +32,7 @@ struct ClipsListView: View {
       HStack(spacing: 12) {
         // Tag picker
         Picker("Tag", selection: $filterTag) {
-          Text("Filter Tags").tag("Filter Tags")
+          Text("All Tags").tag("All")
           ForEach(config.tagOptions, id: \.self) {
             Text($0.capitalized).tag($0)
           }
@@ -41,7 +41,7 @@ struct ClipsListView: View {
 
         // Person picker
         Picker("Person", selection: $filterPerson) {
-          Text("Filter People").tag("Filter People")
+          Text("All People").tag("All")
           ForEach(config.nameOptions, id: \.self) {
             Text($0).tag($0)
           }
@@ -60,7 +60,7 @@ struct ClipsListView: View {
       }
       .padding(.horizontal)
 
-      // search bar appears *below* the pickers
+      // inline search field
       if showSearchField {
         TextField("Search notes…", text: $searchText)
           .padding(8)
@@ -78,12 +78,18 @@ struct ClipsListView: View {
               Text(clip.note)
                 .font(.body)
               Text("👤 \(clip.person) • 🏷 \(clip.contextTag)")
-                .font(.caption).foregroundColor(.secondary)
+                .font(.caption)
+                .foregroundColor(.secondary)
               HStack(spacing: 8) {
-                Text(clip.timestamp
-                       .formatted(.dateTime.year().month().day()
-                                   .hour().minute()))
-                  .font(.caption2).foregroundColor(.gray)
+                Text(
+                  clip.timestamp
+                    .formatted(.dateTime.year().month().day()
+                                .hour().minute())
+                )
+                .font(.caption2)
+                .foregroundColor(.gray)
+
+                // show duration
                 Text("\(duration(of: clip))s")
                   .font(.caption2.monospacedDigit())
                   .foregroundColor(.gray)
@@ -93,7 +99,6 @@ struct ClipsListView: View {
             Spacer()
 
             Button {
-              // AudioManager.playClip(at:) toggles play/pause internally
               audio.playClip(at: clip.fileURL)
               lastPlayedFilename = clip.filename
             } label: {
@@ -103,6 +108,11 @@ struct ClipsListView: View {
                       : "play.circle"
               )
               .font(.title2)
+              .accessibilityLabel(
+                (audio.isPlaying && lastPlayedFilename == clip.filename)
+                  ? "Pause clip"
+                  : "Play clip"
+              )
             }
             .buttonStyle(BorderlessButtonStyle())
           }
@@ -120,7 +130,6 @@ struct ClipsListView: View {
   // MARK: — Actions
 
   private func delete(at offsets: IndexSet) {
-    // delete from filteredClips *and* update the master list
     offsets.forEach { index in
       let clip = filteredClips[index]
       try? Database.shared.deleteClip(clip)

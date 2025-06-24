@@ -63,7 +63,6 @@ struct SettingsView: View {
           showDataSheet = true
         }
       }
-
       Section(header: Text("Activity Tags")) {
         ForEach(config.tagOptions, id: \.self) { tag in
           Text(tag.capitalized)

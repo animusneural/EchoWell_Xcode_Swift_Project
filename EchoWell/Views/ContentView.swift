@@ -1,3 +1,5 @@
+// Views/ContentView.swift
+
 import SwiftUI
 import Charts       // for AnalyticsView
 import Combine
@@ -19,8 +21,10 @@ struct ContentView: View {
     @State private var libraryViewType: LibraryViewType = .list
     @State private var lastPlayedFilename: String?           // track playback
     @State private var elapsedSeconds: Int = 0               // live record timer
+
+    // Timer to tick every second
     private let timer = Timer.publish(every: 1, on: .main, in: .common)
-                            .autoconnect()                  // for ticking each second
+                            .autoconnect()
 
     // MARK: – Default Picker Selections
     init() {
@@ -29,13 +33,14 @@ struct ContentView: View {
         _tag            = State(initialValue: cfg.tagOptions.first ?? "")
     }
 
+    // MARK: — Main Body
     var body: some View {
         TabView {
             // — Record Tab —
             NavigationView {
                 recordView
                     .navigationTitle("Record")
-                    .navigationBarTitleDisplayMode(.inline)   // ← add this
+                    .navigationBarTitleDisplayMode(.inline)
                     // every second while recording, increment timer
                     .onReceive(timer) { _ in
                         if isRecording { elapsedSeconds += 1 }
@@ -51,9 +56,9 @@ struct ContentView: View {
 
             // — Library Tab —
             NavigationView {
-                // simple subview showing ClipsListView
                 ClipsListView()
-                    .navigationBarTitleDisplayMode(.inline)   // ← add this
+                    .navigationTitle("Your Clips")
+                    .navigationBarTitleDisplayMode(.inline)
                     .environmentObject(audio)
             }
             .tabItem {
@@ -64,7 +69,7 @@ struct ContentView: View {
             NavigationView {
                 AnalyticsView()
                     .navigationTitle("Analytics")
-                    .navigationBarTitleDisplayMode(.inline)   // ← add this
+                    .navigationBarTitleDisplayMode(.inline)
             }
             .tabItem {
                 Label("Analytics", systemImage: "chart.bar")
@@ -74,7 +79,7 @@ struct ContentView: View {
             NavigationView {
                 SettingsView()
                     .navigationTitle("Settings")
-                    .navigationBarTitleDisplayMode(.inline)   // ← add this
+                    .navigationBarTitleDisplayMode(.inline)
             }
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
@@ -103,7 +108,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.bottom, 10)
 
-                // 4) Custom Text Field
+                // 3) Custom Text Field
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Custom Text:")
                         .font(.headline)
@@ -111,7 +116,7 @@ struct ContentView: View {
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
 
-                // 5) Person Picker
+                // 4) Person Picker
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Person:")
                         .font(.headline)
@@ -124,7 +129,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                // 6) Activity Tag Picker
+                // 5) Activity Tag Picker
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Activity Tag:")
                         .font(.headline)
@@ -137,7 +142,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                // 7) Record / Stop Button
+                // 6) Record / Stop Button
                 Button(action: toggleRecording) {
                     HStack {
                         Image(systemName: isRecording ? "stop.circle.fill" : "record.circle")
@@ -156,18 +161,20 @@ struct ContentView: View {
                             )
                     }
                     .frame(maxWidth: .infinity)
-                    .padding()
+                    .padding(.vertical, 8)
                 }
                 .accessibilityIdentifier(isRecording ? "Stop" : "Recording")
-                
-                // ex-3) Status message while recording
+
+                // 7) Status message below the button
                 if isRecording {
                     Text(elapsedSeconds >= 15 ? "Good to go!" : "Hold to record…")
                         .font(.headline.monospacedDigit())
                         .foregroundColor(elapsedSeconds >= 15 ? .green : .red)
                         .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 4)
                 }
-             Spacer()
+
+                Spacer()
             }
             .padding()
         }
