@@ -1,10 +1,14 @@
+// EchoWellApp.swift
+
 import SwiftUI
 import AVFoundation
 
 @main
 struct EchoWellApp: App {
+  @State private var didLaunch = false
+
   init() {
-    // enable background playback
+    // background audio session setup (rămâne neschimbat)
     do {
       let session = AVAudioSession.sharedInstance()
       try session.setCategory(.playback, mode: .default, options: [])
@@ -16,8 +20,11 @@ struct EchoWellApp: App {
 
   var body: some Scene {
     WindowGroup {
-      ContentView()
-            .environmentObject(AudioManager())// Asigură-te că aici stă ContentView, nu ClipsListView
+      if didLaunch {
+        ContentView()
+      } else {
+        WelcomeView(didLaunch: $didLaunch)
+      }
     }
   }
 }

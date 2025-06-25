@@ -1,51 +1,47 @@
-/* Views/WelcomeView.swift
+// Views/WelcomeView.swift
 
 import SwiftUI
 
 struct WelcomeView: View {
-    @AppStorage("userName") private var userName: String = ""
-    @State private var draftName: String = ""
+  @Binding var didLaunch: Bool
 
-    var body: some View {
-        VStack(spacing: 40) {
-            Spacer()
+  var body: some View {
+    VStack(spacing: 40) {
+      Spacer()
 
-            Text("Welcome to EchoWell")
-                .font(.largeTitle).bold()
+      Text("Bun venit, Matei!")
+        .font(.largeTitle).bold()
+        .multilineTextAlignment(.center)
+        .padding(.horizontal)
 
-            Text("What should we call you?")
-                .font(.title2)
-                .foregroundColor(.secondary)
+      Text("Înregistrează-ți gândurile și revino oricând.")
+        .font(.title3)
+        .foregroundColor(.secondary)
+        .multilineTextAlignment(.center)
+        .padding(.horizontal)
 
-            TextField("Your name", text: $draftName)
-                .padding()
-                .background(RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.secondary))
-                .padding(.horizontal, 40)
+      Spacer()
 
-            Button(action: {
-                userName = draftName   // once set, userName is non-empty
-            }) {
-                Text("Continue")
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(draftName.isEmpty
-                                  ? Color.gray.opacity(0.5)
-                                  : Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-            }
-            .disabled(draftName.isEmpty)
-            .padding(.horizontal, 40)
+      Button(action: {
+        // marchează că am trecut de ecranul de bun-venit
+        didLaunch = true
+      }) {
+        Text("Începe")
+          .font(.headline)
+          .frame(maxWidth: .infinity)
+          .padding()
+          .background(RoundedRectangle(cornerRadius: 12).fill(Color.accentColor))
+          .foregroundColor(.white)
+      }
+      .padding(.horizontal)
 
-            Spacer()
-
-            Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")")
-                .font(.footnote)
-                .foregroundColor(.secondary)
-        }
-        .padding()
-        .transition(.opacity.combined(with: .slide))
+      Spacer()
     }
+  }
 }
-*/
+
+struct WelcomeView_Previews: PreviewProvider {
+  static var previews: some View {
+    WelcomeView(didLaunch: .constant(false))
+  }
+}
