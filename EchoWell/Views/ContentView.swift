@@ -163,7 +163,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                 }
-                .accessibilityIdentifier(isRecording ? "Stop" : "Recording")
+                .accessibilityIdentifier("recordButton")  // Fixed identifier
 
                 // 7) Status message below the button
                 if isRecording {

@@ -8,7 +8,7 @@ struct ClipsListView: View {
     @State private var clips: [EchoClip] = []
     @State private var lastPlayedFilename: String? = nil
 
-    // filtre
+    // Filters
     @State private var filterTag: String    = "All Tags"
     @State private var filterPerson: String = "All People"
     @State private var searchText: String   = ""
@@ -62,7 +62,7 @@ struct ClipsListView: View {
                   .transition(.move(edge:.top).combined(with:.opacity))
             }
 
-            // ── LISTA FILTRATĂ ──
+            // ── FILTERED LIST ──
             List {
                 ForEach(filteredClips) { clip in
                     HStack(alignment:.top, spacing:12) {
@@ -77,7 +77,7 @@ struct ClipsListView: View {
 
                         Spacer()
 
-                        // buton Play/Pause
+                        // Play/Pause button
                         Button {
                             if audio.isPlaying && lastPlayedFilename == clip.filename {
                                 audio.pauseClip()
@@ -93,8 +93,10 @@ struct ClipsListView: View {
                             .font(.title2)
                         }
                         .buttonStyle(BorderlessButtonStyle())
+                        .accessibilityLabel("Play")
+                        .accessibilityIdentifier("play.circle")
 
-                        // buton Share
+                        // Share button
                         Button {
                             presentShareSheet(items:[clip.fileURL])
                         } label: {
@@ -103,8 +105,17 @@ struct ClipsListView: View {
                         .buttonStyle(BorderlessButtonStyle())
                     }
                     .padding(.vertical, 8)
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            if let index = filteredClips.firstIndex(where: { $0.id == clip.id }) {
+                                delete(at: IndexSet(integer: index))
+                            }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        .accessibilityIdentifier("deleteButton")
+                    }
                 }
-                .onDelete(perform: delete)
             }
         }
         .navigationTitle("Your Clips")
