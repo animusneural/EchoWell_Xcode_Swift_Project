@@ -1,1 +1,7 @@
-
+Package Dependencies:
+PostgresClientKit
+Socker
+SQLite
+SSLService
+swift-collections
+swift-toolchain-sqlite 1.0.4
